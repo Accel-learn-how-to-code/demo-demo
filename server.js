@@ -3,53 +3,59 @@
 
 // we've started you off with Express (https://expressjs.com/)
 // but feel free to use whatever libraries or frameworks you'd like through `package.json`.
-const express = require('express');
+const express = require("express");
 const app = express();
-const bodyParser = require('body-parser');
+const bodyParser = require("body-parser");
+
+const low = require("lowdb");
+const FileSync = require("lowdb/adapters/FileSync");
+const adapter = new FileSync("db.json");
+const db = low(adapter);
+
+db.defaults({
+  users: []
+}).write();
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
+app.use(
+  bodyParser.urlencoded({
     extended: true
-}));
-app.set('view engine', 'pug');
-app.set('views','');
+  })
+);
+app.set("view engine", "pug");
+app.set("views", "");
 
-var usersList = [
-    {id: 1, name: 'Accel'},
-    {id: 2, name: 'Long'},
-    {id: 3, name: 'Vy'},
-    {id: 4, name: 'Huyền'},
-    {id: 5, name: 'Khoa'}
-];
-
-app.get('/', function (req, res) {
-    res.render('index', {
-        name: 'Accel'
-    });
+app.get("/", function(req, res) {
+  res.render("index", {
+    name: "Accel"
+  });
 });
-app.get('/users', function (req, res) {
-    res.render('index2', {
-        users: usersList
-    });
+app.get("/users", function(req, res) {
+  res.render("index2", {
+    users: db.get("users").value()
+  });
 });
 
-app.get('/users/search', function (req, res) {
-    var q = req.query.q;
-    var matchUsers = usersList.filter(function(user){
-        return user.name.toLowerCase().indexOf(q.toLowerCase()) !== -1;
-    });
+app.get("/users/search", function(req, res) {
+  var q = req.query.q;
+  var usersList = db.get("users").value();
+  var matchUsers = usersList.filter(function(user) {
+    return user.name.toLowerCase().indexOf(q.toLowerCase()) !== -1;
+  });
 
-    res.render('index2', {
-        users: matchUsers
-    });
+  res.render("index2", {
+    users: matchUsers
+  });
 });
-app.get('/users/create', function (req, res) {
-    res.render('create')
+app.get("/users/create", function(req, res) {
+  res.render("create");
 });
 
-app.post('/users/create', function (req, res) {
-    usersList.push(req.body);
-    res.redirect('/users');
+app.post("/users/create", function(req, res) {
+  db.get('users')
+        .push(req.body)
+        .write();
+  res.redirect("/users");
 });
 // listen for requests :)
 app.listen(process.env.PORT, () => {
